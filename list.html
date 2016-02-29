@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <script src="./build/react.js"></script>
+    <script src="./build/react-dom.js"></script>
+    <script src="./build/browser.min.js"></script>
+    <style type="text/css">
+    *{margin:0; padding:0;}
+    .compenentselect{
+      margin-left:100px;
+      position: relative;
+    }
+    .compenentselect input{
+      border-radius: 5px;
+      height:80px;
+      font-size:24px;
+    }
+    .select-list{
+      position:absolute;
+      max-height: 300px;
+      overflow-y: scroll;
+      background: #f0f0f0;
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+      z-index: 999;
+      line-height: 1.5;
+    }
+    .select-list .on{
+      background: #ccc
+    }
+    </style>
+  </head>
+  <body style="background:#333">
+    <div id="example"></div>
+    <br><br><br><br><br><br><br><br><br><br><br>
+    <div id="example2"></div>
+    <script type="text/babel">
+      var list_data = ['123456','asasd','errtger','123bgfb456','rtyh','kiuyk']
+      var InputList = React.createClass({
+        getInitialState: function(){
+          return {
+            display: "none",
+            width: "auto",
+            inputText: '',
+            inputFocus: false,
+            nowChoose: -1,
+            hidenValue: ""
+          }
+        },
+        render: function(){
+          var list = ""
+          if(this.state.inputFocus) {
+            list = <ul style={{width: this.state.width}} ref="selectList" className="select-list">
+                  {
+                      list_data.sort(function(a, b){
+                        if(!!~a.indexOf(this.state.inputText)) {
+                          return -1
+                        }
+                        if(!!~b.indexOf(this.state.inputText)) {
+                          return 1
+                        }
+                        return 0
+                      }.bind(this)).map(function(item, index) {
+                        return <li data-value={item} data-index={index} key={index} className={index == this.state.nowChoose ? 'on' : ''} onMouseDown={this.listSelect} onMouseOver={this.mouseChoose} >{item}</li>
+                      }.bind(this))
+                  }
+                  </ul>
+          }
+          return (
+            <div className="compenentselect">
+              <input type="text" value={this.state.inputText} ref="input" onFocus={this.onFocus} onBlur={this.onBlur} onKeyDown={this.keyFind} onChange={this.onChange} />
+              <input type="hidden" ref="hid" value={this.state.hidenValue} />
+              {list}
+            </div>
+          )
+        },
+        onFocus: function(e) {
+          this.setState({
+            inputFocus: true,
+            width: e.target.offsetWidth
+          })
+        },
+        onChange: function(e) {
+          this.setState({
+            inputText: e.target.value
+          })
+        },
+        onBlur: function() {
+          this.setState({
+            inputFocus: false,
+            nowChoose: -1
+          })
+        },
+        keyFind: function(e){
+          var len = list_data.length
+          this.setState({
+            inputText: e.target.value
+          })
+          var classIndex = parseInt(this.state.nowChoose);
+          switch(e.keyCode){
+            case 40:
+              if(classIndex == len - 1){
+                classIndex = -1
+              }
+              this.setState({
+                nowChoose: classIndex + 1
+              })
+              break;
+            case 38:
+              if(classIndex == 0 || classIndex == -1 ){
+                classIndex = len
+              }
+              this.setState({
+                nowChoose: classIndex - 1
+              })
+              break;
+            case 13:
+              this.setState({
+                inputText: list_data[this.state.nowChoose],
+                nowChoose: 0,
+                hidenValue: list_data[this.state.nowChoose]
+              })
+              break;
+          }  
+        },
+        listSelect: function(e) {
+          this.setState({
+            inputText: e.target.innerHTML,
+            hidenValue: e.target.getAttribute("data-value")
+          })
+          //this.props.callback(this.refs.hid)
+        },
+        mouseChoose: function(e){
+          var index = e.target.getAttribute("data-index")
+          this.setState({
+            nowChoose: index
+          })
+        },
+        componentDidMount: function(){
+      
+        },
+        componentWillUpdate: function(){
+
+        },
+
+      })
+
+      ReactDOM.render(<InputList/>,document.getElementById('example'))
+
+      ReactDOM.render(<InputList/>,document.getElementById('example2'))
+    </script>
+
+    <!-- render: function() {
+      <SearchSelect callback={this.onCallback} />
+      <span>{this.state.calced}</span>
+    },
+    onCallback: function(val) {
+      this.setState({
+        calced: this.fix + val
+      })
+    } -->
+    
+  </body>
+</html>
