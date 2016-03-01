@@ -18,7 +18,7 @@
     }
     .select-list{
       position:absolute;
-      max-height: 300px;
+      max-height: 100px;
       overflow-y: scroll;
       background: #f0f0f0;
       list-style-type: none;
@@ -36,14 +36,20 @@
     <div id="example"></div>
     <br><br><br><br><br><br><br><br><br><br><br>
     <div id="example2"></div>
+    <script type="text/javascript" src="fetch.js"></script>
     <script type="text/babel">
-      var list_data = ['123456','asasd','errtger','123bgfb456','rtyh','kiuyk']
       var InputList = React.createClass({
         getInitialState: function(){
           return {
+            sorted_data: [
+                          {'value':'test1','title':'默认数据'},
+                          {'value':'test2','title':'测试数据'},
+                          {'value':'test3','title':'什么鬼'},
+                          {'value':'test4','title':'哈哈哈'}
+                          ],
             display: "none",
             width: "auto",
-            inputText: '',
+            inputText: "",
             inputFocus: false,
             nowChoose: -1,
             hidenValue: ""
@@ -54,16 +60,8 @@
           if(this.state.inputFocus) {
             list = <ul style={{width: this.state.width}} ref="selectList" className="select-list">
                   {
-                      list_data.sort(function(a, b){
-                        if(!!~a.indexOf(this.state.inputText)) {
-                          return -1
-                        }
-                        if(!!~b.indexOf(this.state.inputText)) {
-                          return 1
-                        }
-                        return 0
-                      }.bind(this)).map(function(item, index) {
-                        return <li data-value={item} data-index={index} key={index} className={index == this.state.nowChoose ? 'on' : ''} onMouseDown={this.listSelect} onMouseOver={this.mouseChoose} >{item}</li>
+                      this.state.sorted_data.map(function(item, index) {
+                        return <li data-value={item.value} data-index={index} key={index} className={index == this.state.nowChoose ? 'on' : ''} onMouseDown={this.listSelect} onMouseOver={this.mouseChoose} >{item.title}</li>
                       }.bind(this))
                   }
                   </ul>
@@ -84,8 +82,19 @@
         },
         onChange: function(e) {
           this.setState({
-            inputText: e.target.value
+            inputText: e.target.value,
+            sorted_data: this.state.sorted_data.sort(function(a, b){
+              if(!!~a.title.indexOf(e.target.value)) {
+                return -1
+              }
+              if(!!~b.title.indexOf(e.target.value)) {
+                return 1
+              }
+              return 0
+            }.bind(this)),
+            nowChoose: 0
           })
+          this.refs.selectList.scrollTop = 0
         },
         onBlur: function() {
           this.setState({
@@ -94,11 +103,14 @@
           })
         },
         keyFind: function(e){
-          var len = list_data.length
+          var len = this.state.sorted_data.length
           this.setState({
             inputText: e.target.value
           })
           var classIndex = parseInt(this.state.nowChoose);
+          var wrapHeight = this.refs.selectList.offsetHeight;
+          var liHeight = this.refs.selectList.getElementsByTagName('li')[0].offsetHeight;
+          var rows = parseInt(wrapHeight / liHeight)
           switch(e.keyCode){
             case 40:
               if(classIndex == len - 1){
@@ -107,6 +119,11 @@
               this.setState({
                 nowChoose: classIndex + 1
               })
+              if(classIndex+1 > rows-1){
+                this.refs.selectList.scrollTop += liHeight
+              }else{
+                this.refs.selectList.scrollTop = 0
+              }
               break;
             case 38:
               if(classIndex == 0 || classIndex == -1 ){
@@ -115,12 +132,18 @@
               this.setState({
                 nowChoose: classIndex - 1
               })
+              if(classIndex-1 < rows){
+                this.refs.selectList.scrollTop = 0
+              }else if(classIndex == len){
+                this.refs.selectList.scrollTop = liHeight*len
+              }else{
+                this.refs.selectList.scrollTop -= liHeight
+              }
               break;
             case 13:
               this.setState({
-                inputText: list_data[this.state.nowChoose],
-                nowChoose: 0,
-                hidenValue: list_data[this.state.nowChoose]
+                inputText: this.state.sorted_data[this.state.nowChoose].title,
+                hidenValue: this.state.sorted_data[this.state.nowChoose].value
               })
               break;
           }  
@@ -139,7 +162,23 @@
           })
         },
         componentDidMount: function(){
-      
+          var self = this
+          if(this.isMounted() && this.props.source){
+            fetch(self.props.source,{method: self.props["data-method"]}).then(function(resp){
+              return resp.json()
+            }).then(function(json){
+              var arr = [];
+              json.data.names.map(function(name,index){
+                var d = {"value":index,"title":name[0].mynames}
+                arr.push(d) 
+              })
+              self.setState({
+                sorted_data : arr
+              })
+            }).catch(function(err){
+              console.log(err)
+            })
+          }
         },
         componentWillUpdate: function(){
 
@@ -147,7 +186,7 @@
 
       })
 
-      ReactDOM.render(<InputList/>,document.getElementById('example'))
+      ReactDOM.render(<InputList source="http://demo.mikoshu.me/data.json" data-method="GET" />,document.getElementById('example'))
 
       ReactDOM.render(<InputList/>,document.getElementById('example2'))
     </script>
@@ -161,6 +200,5 @@
         calced: this.fix + val
       })
     } -->
-    
   </body>
 </html>
